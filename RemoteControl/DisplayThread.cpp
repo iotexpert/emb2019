@@ -5,6 +5,8 @@
 #include "cypressLogo.h"
 #include "mouserLogo.h"
 
+#define dbg_printf(...)
+//#define dbg_printf printf
 
 
 class I2CPreInit : public I2C
@@ -68,7 +70,7 @@ void drawBle( DisplayType_t type )
 	{
 	case BLE_START:
     queue->cancel(wifiTimerId);
-    printf("WiFi Timer ID Cancel\n");
+    dbg_printf("DisplayThread: WiFi Timer ID Cancel\n");
     wifiLED = LED_OFF; // turn it off
 
     display.clearDisplay();
@@ -86,7 +88,7 @@ void drawBle( DisplayType_t type )
 		break;
 
   default:
-    printf("Function drawBle Missing case %u",type);
+    dbg_printf("DisplayThread: Function drawBle Missing case %u",type);
     break;
 	}
   display.display();
@@ -117,7 +119,7 @@ void drawWiFi(  DisplayType_t type )
 		break;
 
     default:
-      printf("Function drawWiFi Missing case %u",type);
+      dbg_printf("DisplayThread: Function drawWiFi Missing case %u",type);
       break;
 	}
   display.display();
@@ -157,7 +159,7 @@ void drawGame( DisplayMessage_t *message )
 		break;
 
     default:
-      printf("Function drawGame Missing case %u",message->type);
+      dbg_printf("DisplayThread: Function drawGame Missing case %u",message->type);
       break;
 	}
   display.display();
@@ -165,7 +167,7 @@ void drawGame( DisplayMessage_t *message )
 
 void drawSwipe(DisplayMessage_t *message)
 {
-  printf("draw swipe %d\n",message->val1);
+  dbg_printf("DisplayThread: draw swipe %d\n",message->val1);
   char msg[22];
 	snprintf(msg, sizeof(msg), "Swipe: %4d", message->val1);
   display.printAt(10,6,Adafruit_GFX::ALIGN_CENTER,1,msg);
@@ -175,90 +177,90 @@ void drawSwipe(DisplayMessage_t *message)
 
 void testDrawBLE()
 {
-  printf("TestDraw BLE\n");
+  dbg_printf("TestDraw BLE\n");
   DisplayMessage_t *msg;
 
   msg = displayPool.alloc();
   msg->command = BLE_SCREEN;
   msg->type = BLE_START;
   displayQueue.put(msg);
-  printf("BLE_START\n");
+  dbg_printf(DisplayThread: "BLE_START\n");
   wait(5.0);
 
   msg = displayPool.alloc();
   msg->command = BLE_SCREEN;
   msg->type = BLE_ADVERTISE;
   displayQueue.put(msg);
-  printf("BLE_ADVERTISE\n");
+  dbg_printf("DisplayThread: BLE_ADVERTISE\n");
   wait(1.0);
 
   msg = displayPool.alloc();
   msg->command = BLE_SCREEN;
   msg->type = BLE_CONNECT;
   displayQueue.put(msg);
-  printf("BLE_CONNECT\n");
+  dbg_printf("DisplayThread: BLE_CONNECT\n");
   wait(1.0);
 
   msg = displayPool.alloc();
   msg->command = BLE_SCREEN;
   msg->type = REGISTER_NOTIFY;
   displayQueue.put(msg);
-  printf("REGISTER_NOTIFY\n");
+  dbg_printf("DisplayThread: REGISTER_NOTIFY\n");
   wait(1.0);
 }
 
 void testDrawWiFi()
 {
-    printf("TestDraw WiFi\n");
+    dbg_printf("TestDraw WiFi\n");
     DisplayMessage_t *msg;
 
     msg = displayPool.alloc();
     msg->command = WIFI_SCREEN;
     msg->type = WIFI_CONNECT;
     displayQueue.put(msg);
-    printf("WIFI_CONNECT\n");
+    dbg_printf("DisplayThread: WIFI_CONNECT\n");
     wait(1.0);
 
     msg = displayPool.alloc();
     msg->command = WIFI_SCREEN;
     msg->type = AWS_RESOURCES;
     displayQueue.put(msg);
-    printf("AWS_RESOURCES\n");
+    dbg_printf("DisplayThread: AWS_RESOURCES\n");
     wait(1.0);
 
     msg = displayPool.alloc();
     msg->command = WIFI_SCREEN;
     msg->type = AWS_CONNECT;
     displayQueue.put(msg);
-    printf("AWS_CONNECT\n");
+    dbg_printf("DisplayThread: AWS_CONNECT\n");
     wait(1.0);
 
     msg = displayPool.alloc();
     msg->command = WIFI_SCREEN;
     msg->type = SUBSCRIBE_SHADOW;
     displayQueue.put(msg);
-    printf("SUBSCRIBE_SHADOW\n");
+    dbg_printf("DisplayThread: SUBSCRIBE_SHADOW\n");
     wait(1.0);
 
 }
 
 void testDrawGame()
 {
-    printf("TestDraw drawGame\n");
+    dbg_printf("TestDraw drawGame\n");
     DisplayMessage_t *msg;
 
     msg = displayPool.alloc();
     msg->command = GAME_SCREEN;
     msg->type = INIT_BLE;
     displayQueue.put(msg);
-    printf("GAME_SCREEN INIT_BLE\n");
+    dbg_printf("DisplayThread: GAME_SCREEN INIT_BLE\n");
     wait(1.0);
 
     msg = displayPool.alloc();
     msg->command = GAME_SCREEN;
     msg->type = INIT_WIFI;
     displayQueue.put(msg);
-    printf("GAME_SCREEN INIT_WIFI\n");
+    dbg_printf("DisplayThread: GAME_SCREEN INIT_WIFI\n");
     wait(1.0);
 
     for(int i=0;i<=100;i=i+5)
@@ -270,7 +272,7 @@ void testDrawGame()
       msg->val2 = 100-i;
 
       displayQueue.put(msg);
-      printf("GAME_SCREEN WATER_VALUE %d %d\n",i,100-i);
+      dbg_printf("DisplayThread: GAME_SCREEN WATER_VALUE %d %d\n",i,100-i);
       wait(0.2);
     }
   }
@@ -278,7 +280,7 @@ void testDrawGame()
   void testSwipe()
   {
 
-    printf("testswipe\n");
+    dbg_printf("testswipe\n");
     DisplayMessage_t *msg;
 
     for(int i=-100;i<=100;i=i+5)
@@ -289,7 +291,7 @@ void testDrawGame()
       msg->val1 = i;
 
       displayQueue.put(msg);
-      printf("Swipe value %d %d\n",i);
+      dbg_printf("DisplayThread: Swipe value %d %d\n",i);
       wait(0.2);
     }
 
@@ -316,7 +318,7 @@ void displayThread()
   bleTimerId = queue->call_every(100, bleLedTimer);
   wifiTimerId = queue->call_every(99, wifiLedTimer);
 
-  printf("WiFi = %d BLE=%d\n",wifiTimerId,bleTimerId);
+  dbg_printf("DisplayThread: WiFi = %d BLE=%d\n",wifiTimerId,bleTimerId);
   drawSplash();
   gameMode = MODE_CONNECT;
 
@@ -327,7 +329,7 @@ void displayThread()
     DisplayMessage_t *msg;
 
     osEvent evt = displayQueue.get();
-    printf("Event Status = %d\n",evt.status);
+    dbg_printf("DisplayThread: Event Status = %d\n",evt.status);
     if (evt.status == osEventMessage) {
           msg = (DisplayMessage_t *)evt.value.p;
 

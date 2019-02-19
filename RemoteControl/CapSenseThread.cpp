@@ -6,6 +6,10 @@
 #include "BleThread.h"
 #include "WifiThread.h"
 
+
+#define dbg_printf(...)
+//#define dbg_printf printf
+
 Semaphore capsenseSemaphore;
 Queue<int32_t, 10> swipeQueue;
 MemoryPool<int32_t, 10> swipePool;
@@ -48,7 +52,7 @@ void capSenseThread(void)
         Cy_CapSense_ProcessAllWidgets(&cy_capsense_context);
         if(0uL != Cy_CapSense_IsWidgetActive(CY_CAPSENSE_BTBTN_WDGT_ID, &cy_capsense_context))
         {
-          printf("Bluetooth Button\n");
+          dbg_printf("CapSenseThread:Bluetooth Button\n");
           if(gameMode == MODE_CONNECT)
           {
             gameMode = MODE_CONNECT_BLE;
@@ -58,7 +62,7 @@ void capSenseThread(void)
 
         if(0uL != Cy_CapSense_IsWidgetActive(CY_CAPSENSE_WIFIBTN_WDGT_ID, &cy_capsense_context))
         {
-          printf("WiFi Button\n");
+          dbg_printf("CapSenseThread:WiFi Button\n");
           if(gameMode == MODE_CONNECT)
           {
             gameMode = MODE_CONNECT_WIFI;
@@ -74,7 +78,7 @@ void capSenseThread(void)
           if(startPos == 0xFFFF)
           {
             startPos = endPos;
-            printf("Set Start =%u\n",startPos);
+            dbg_printf("CapSenseThread:Set Start =%u\n",startPos);
           }
         }
         else // No touch
@@ -83,28 +87,37 @@ void capSenseThread(void)
           if(startPos != 0xFFFF)
           {
             DisplayMessage_t *msg;
-            printf("Swipe s:%u e%u Val=%d\n",startPos,endPos,(endPos - startPos));
+            dbg_printf("CapSenseThread: Swipe s:%u e%u Val=%d\n",startPos,endPos,(endPos - startPos));
             // Test code
             #if 0
             msg = displayPool.alloc();
-            msg->command = GAME_SCREEN;
-            msg->type = INIT_BLE;
-            displayQueue.put(msg);
+            if(msg)
+            {
+              msg->command = GAME_SCREEN;
+              msg->type = INIT_BLE;
+              displayQueue.put(msg);
+            }
             #endif
 
             if(gameMode == MODE_GAME)
             {
               // Send the swipe value to the display
               msg = displayPool.alloc();
-              msg->command = SWIPE_VALUE;
-              msg->val1 = endPos - startPos;
-              displayQueue.put(msg);
-
+              if(msg)
+              {
+                msg->command = SWIPE_VALUE;
+                msg->val1 = endPos - startPos;
+                displayQueue.put(msg);
+              }
               // Send the swipe value to either BLE or  WiFi to be processes
               int32_t *swipeMsg;
               swipeMsg = swipePool.alloc();
-              *swipeMsg = endPos - startPos;
-              swipeQueue.put(swipeMsg);
+              if(swipeMsg)
+              {
+                *swipeMsg = endPos - startPos;
+                dbg_printf("CapSenseThread: swipeMsg %d\n",*swipeMsg);
+                swipeQueue.put(swipeMsg);
+              }
             }
             startPos = 0xFFFF;
             }
