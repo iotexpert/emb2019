@@ -22,7 +22,7 @@ All text above must be included in any redistribution
 #include "Adafruit_GFX.h"
 #include "glcdfont.h"
 
-void Adafruit_GFX::printAt(uint16_t column, uint16_t row,TextAlignment_t align, uint8_t size,char *text )
+void Adafruit_GFX::printAt(uint16_t column, uint16_t row,TextAlignment_t align, uint8_t size,const char *text )
 {
   typedef struct
   {

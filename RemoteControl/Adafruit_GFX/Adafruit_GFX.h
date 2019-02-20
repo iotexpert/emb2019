@@ -180,7 +180,7 @@ class Adafruit_GFX : public Stream
 
     } TextAlignment_t;
 
-    virtual void printAt(uint16_t column,uint16_t row, TextAlignment_t align, uint8_t size,char *text );
+    virtual void printAt(uint16_t column,uint16_t row, TextAlignment_t align, uint8_t size,const char *text );
 
 protected:
     int16_t  _rawWidth, _rawHeight;   // this is the 'raw' display w/h - never changes

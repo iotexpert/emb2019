@@ -43,10 +43,10 @@ void drawSplash( void )
 {
 	display.drawX11BitMap(cypressLogo,cypressLogoWidth,sizeof(cypressLogo),0,(64-cypressLogoHeight)/2);
 	display.display();
-	wait(2.0); // Cypress Logo 2 Seconds
+	wait(2.0);       // Cypress Logo 2 Seconds
 	display.drawX11BitMap(mouserLogo,mouserLogoWidth,sizeof(mouserLogo),0,(64-mouserLogoHeight)/2);
 	display.display();
-	wait(2.0); // Mouser Logo 2 Seconds
+	wait(2.0);       // Mouser Logo 2 Seconds
 
 
 	display.clearDisplay();
@@ -68,20 +68,23 @@ void drawBle( DisplayType_t type )
 	case BLE_START:
 		queue->cancel(wifiTimerId);
 		dbg_printf("DisplayThread: WiFi Timer ID Cancel\n");
-		wifiLED = LED_OFF; // turn it off
+		wifiLED = LED_OFF;             // turn it off
 
 		display.clearDisplay();
-		display.printAt(10,0,Adafruit_GFX::ALIGN_CENTER,1,(char *)"Start BLE");
+		display.printAt(10,0,Adafruit_GFX::ALIGN_CENTER,1,"Start BLE");
 		break;
 
 	case BLE_ADVERTISE:
-		display.printAt(10,1,Adafruit_GFX::ALIGN_CENTER,1,(char *)"Advertise");
+		display.printAt(10,2,Adafruit_GFX::ALIGN_CENTER,1,"Start Advertise");
 		break;
 	case BLE_CONNECT:
-		display.printAt(10,2,Adafruit_GFX::ALIGN_CENTER,1,(char *)"Wait For Connect");
+		display.printAt(10,3,Adafruit_GFX::ALIGN_CENTER,1,"Connect Done");
 		break;
+	case BLE_SERVICE_DISC:
+		display.printAt(10,4,Adafruit_GFX::ALIGN_CENTER,1,"Service Disc Done");
+	break;
 	case REGISTER_NOTIFY:
-		display.printAt(10,3,Adafruit_GFX::ALIGN_CENTER,1,(char *)"Register Notify");
+		display.printAt(10,5,Adafruit_GFX::ALIGN_CENTER,1,"Notify on");
 		break;
 
 	default:
@@ -100,19 +103,19 @@ void drawWiFi(  DisplayType_t type )
 	{
 	case WIFI_CONNECT:
 		queue->cancel(bleTimerId);
-		bleLED = LED_OFF; // off
+		bleLED = LED_OFF;             // off
 
 		display.clearDisplay();
-		display.printAt(10,1,Adafruit_GFX::ALIGN_CENTER,1,(char *)"Connecting WiFi");
+		display.printAt(10,1,Adafruit_GFX::ALIGN_CENTER,1,"Connecting WiFi");
 		break;
 	case AWS_RESOURCES:
-		display.printAt(10,2,Adafruit_GFX::ALIGN_CENTER,1,(char *)"Loading Resources");
+		display.printAt(10,2,Adafruit_GFX::ALIGN_CENTER,1,"Loading Resources");
 		break;
 	case AWS_CONNECT:
-		display.printAt(10,3,Adafruit_GFX::ALIGN_CENTER,1,(char *)"Connecting AWS");
+		display.printAt(10,3,Adafruit_GFX::ALIGN_CENTER,1,"Connecting AWS");
 		break;
 	case SUBSCRIBE_SHADOW:
-		display.printAt(10,4,Adafruit_GFX::ALIGN_CENTER,1,(char *)"Subscribing");
+		display.printAt(10,4,Adafruit_GFX::ALIGN_CENTER,1,"Subscribing");
 		break;
 
 	default:
@@ -133,8 +136,8 @@ void drawGame( DisplayMessage_t *message )
 	case INIT_BLE:
 	case INIT_WIFI:
 		display.clearDisplay();
-		display.printAt(10,1,Adafruit_GFX::ALIGN_CENTER,1,(char *)"Game On!");
-		display.printAt(10,2,Adafruit_GFX::ALIGN_CENTER,1,(char *)"Water Level");
+		display.printAt(10,1,Adafruit_GFX::ALIGN_CENTER,1,"Game On!");
+		display.printAt(10,2,Adafruit_GFX::ALIGN_CENTER,1,"Water Level");
 
 		if(message->type == INIT_BLE)
 		{
@@ -196,6 +199,13 @@ void testDrawBLE()
 	msg->type = BLE_CONNECT;
 	displayQueue.put(msg);
 	dbg_printf("DisplayThread: BLE_CONNECT\n");
+	wait(1.0);
+
+	msg = displayPool.alloc();
+	msg->command = BLE_SCREEN;
+	msg->type = BLE_SERVICE_DISC;
+	displayQueue.put(msg);
+	dbg_printf("DisplayThread: BLE_SERVICE_DISC\n");
 	wait(1.0);
 
 	msg = displayPool.alloc();
