@@ -18,8 +18,8 @@
 #define AWS_PUB_DELAY    					          (5000)
 #define PUBLISHER_CERTIFICATES_MAX_SIZE     (0x7fffffff)
 
-#define SUBSCRIBE_TOPIC                     "TEST1"
-#define PUMP_KICK_TOPIC					            "PUMP_KICK_TOPIC"
+#define SUBSCRIBE_TOPIC                     "$aws/things/Electronica2018/shadow/update"
+#define PUMP_KICK_TOPIC					            "PumpAWS"
 
 #define APP_PUBLISH_RETRY_COUNT             (5)
 #define AWSIOT_KEEPALIVE_TIMEOUT            (6000)
@@ -35,15 +35,16 @@ char myName[10];
 
 static void messageArrived( aws_iot_message_t& md)
 {
+  uint8_t waterLeft  = 0;
+  uint8_t waterRight = 0;
   aws_message_t &message = md.message;
 	cJSON *root;
-	cJSON *left;
-	cJSON *right;
+  cJSON *state;
+  cJSON *reported;
 
   dbg_printf("WiFiThread:Message length = %d\n",message.payloadlen);
 
-
-  char buff[48];
+  char buff[128];
   char *payload = (char *)message.payload;
   if(message.payloadlen > sizeof(buff)-1)
     return;
@@ -53,23 +54,23 @@ static void messageArrived( aws_iot_message_t& md)
 
   dbg_printf("WiFiThread:%s=%s\n",SUBSCRIBE_TOPIC,buff);
 
-  return;
-  root = cJSON_Parse((char*) message.payload);
-  left = cJSON_GetObjectItem(root,"left");
-  right = cJSON_GetObjectItem(root,"right");
-  uint8_t leftValue=0;
-  uint8_t rightValue= 0;
+    root = cJSON_Parse(buff);
+    state = cJSON_GetObjectItem(root,"state");
+    reported = cJSON_GetObjectItem(state,"reported");
+      waterLeft = (uint8_t) cJSON_GetObjectItem(reported,"WaterLevelLeftAWS")->valuedouble;
+      waterRight = (uint8_t) cJSON_GetObjectItem(reported,"WaterLevelRightAWS")->valuedouble;
+    cJSON_Delete(root); /* Free up memory */
 
-  if(left && cJSON_IsNumber(left))
-  {
-    leftValue = left->valueint;
-  }
 
-  if(right && cJSON_IsNumber(right))
-  {
-    rightValue = right->valueint;
-  }
-  cJSON_Delete(root);
+  dbg_printf("Left = %d Right=%d\n",waterLeft,waterRight);
+
+  DisplayMessage_t *msg;
+  msg = displayPool.alloc();
+  msg->command = GAME_SCREEN;
+  msg->type = WATER_VALUE;
+  msg->val1 = waterLeft;
+  msg->val2 = waterRight;
+  displayQueue.put(msg);
 
 }
 
@@ -197,7 +198,7 @@ void wifiThread()
   while(1)
   {
     int32_t *swipeMsg;
-    osEvent evt = swipeQueue.get(10);
+    osEvent evt = swipeQueue.get(AWSIOT_TIMEOUT);
     if (evt.status == osEventMessage) {
         dbg_printf("WiFiThread:Event Status = %d\n",evt.status);
 
