@@ -39,7 +39,7 @@ static void messageArrived( aws_iot_message_t& md)
 
 	char *payload = (char *)message.payload;
 
-	for(int i=0; i<message.payloadlen; i++)
+	for(unsigned int i=0; i<message.payloadlen; i++)
 	{
 		buff[i] = payload[i];
 	}
@@ -110,11 +110,11 @@ void wifiThread()
 	const char *tempName = wifi->get_mac_address();
 
 	uint32_t uniquenum=0;
-	for(int i=0; i<strlen(tempName); i++)
+	for(unsigned int i=0; i<strlen(tempName); i++)
 	{
 		uniquenum += tempName[i];
 	}
-	sprintf(myName,"R%04X",uniquenum);
+	sprintf(myName,"R%04X",(unsigned int)uniquenum);
 
 	dbg_printf("WiFiThread: myName %s\n",myName);
 
@@ -180,6 +180,7 @@ void wifiThread()
 		dbg_printf ("WiFiThread:Subscription to MQTT topic failed \n");
 	}
 
+
 	msg = displayPool.alloc();
 	msg->command = GAME_SCREEN;
 	msg->type = INIT_WIFI;
@@ -194,11 +195,11 @@ void wifiThread()
 		if (evt.status == osEventMessage) {
 			char buff[20];
 			swipeMsg = (int32_t *)evt.value.p;
-			dbg_printf("WiFiThread:Received swipe=%d\n",*swipeMsg);
+			dbg_printf("WiFiThread:Received swipe=%d\n",(int)*swipeMsg);
 			if(*swipeMsg < 0)
-				sprintf(buff,"{\"left\":%d}",*swipeMsg * -1);
+				sprintf(buff,"{\"left\":%d}",(int)(*swipeMsg * -1));
 			else
-				sprintf(buff,"{\"right\":%d}",*swipeMsg);
+				sprintf(buff,"{\"right\":%d}",(int)(*swipeMsg));
 
 			swipePool.free(swipeMsg);
 

@@ -6,7 +6,6 @@
 #include "BleThread.h"
 #include "WifiThread.h"
 
-
 #define dbg_printf(...)
 //#define dbg_printf printf
 
