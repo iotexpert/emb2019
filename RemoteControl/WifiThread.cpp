@@ -12,7 +12,7 @@
 //#define dbg_printf(...)
 #define dbg_printf printf
 
-#define AWS_TIMEOUT 		500
+#define AWS_TIMEOUT 		100
 #define AWS_CONNECT_TIMEOUT 10000
 
 #define AWS_PUB_DELAY    					          (5000)
@@ -21,10 +21,10 @@
 #define SUBSCRIBE_TOPIC                     "TEST1"
 #define PUMP_KICK_TOPIC					            "PUMP_KICK_TOPIC"
 
-#define APP_PUBLISH_RETRY_COUNT                    (5)
-#define AWSIOT_KEEPALIVE_TIMEOUT            (600)
+#define APP_PUBLISH_RETRY_COUNT             (5)
+#define AWSIOT_KEEPALIVE_TIMEOUT            (6000)
 #define AWS_IOT_SECURE_PORT                 (8883)
-#define AWSIOT_TIMEOUT                      (20)
+#define AWSIOT_TIMEOUT                      (10)
 #define AWSIOT_ENDPOINT_ADDRESS             "amk6m51qrxr2u-ats.iot.us-east-1.amazonaws.com"
 
 WiFiInterface *wifi;
@@ -40,7 +40,19 @@ static void messageArrived( aws_iot_message_t& md)
 	cJSON *left;
 	cJSON *right;
 
-  dbg_printf("WiFiThread:%s=%s\n",SUBSCRIBE_TOPIC,message.payload);
+  dbg_printf("WiFiThread:Message length = %d\n",message.payloadlen);
+
+
+  char buff[48];
+  char *payload = (char *)message.payload;
+  if(message.payloadlen > sizeof(buff)-1)
+    return;
+  for(int i=0;i<message.payloadlen;i++)
+    buff[i] = payload[i];
+  buff[message.payloadlen] = 0;
+
+  dbg_printf("WiFiThread:%s=%s\n",SUBSCRIBE_TOPIC,buff);
+
   return;
   root = cJSON_Parse((char*) message.payload);
   left = cJSON_GetObjectItem(root,"left");
@@ -185,9 +197,10 @@ void wifiThread()
   while(1)
   {
     int32_t *swipeMsg;
-    osEvent evt = swipeQueue.get();
-    dbg_printf("WiFiThread:Event Status = %d\n",evt.status);
+    osEvent evt = swipeQueue.get(10);
     if (evt.status == osEventMessage) {
+        dbg_printf("WiFiThread:Event Status = %d\n",evt.status);
+
         char buff[20];
         swipeMsg = (int32_t *)evt.value.p;
         dbg_printf("WiFiThread:Received swipe=%d\n",*swipeMsg);
@@ -207,5 +220,7 @@ void wifiThread()
               pub_retries++ ;
           } while ( ( result != AWS_SUCCESS )  && ( pub_retries < APP_PUBLISH_RETRY_COUNT ) );
     }
+    client.yield(AWSIOT_TIMEOUT);
+
   }
 }
