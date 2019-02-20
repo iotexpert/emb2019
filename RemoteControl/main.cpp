@@ -18,10 +18,12 @@ int main()
     displayThreadHandle.start(displayThread);
     capSenseThreadHandle.start(capSenseThread);
 
+  /*
     // ARH delete this and exit the application thread probably
     while(1)
     {
         x += 1;
         wait(1.0);
     }
+    */
 }
