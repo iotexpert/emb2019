@@ -12,5 +12,6 @@ typedef enum {
 
 extern volatile GameMode_t gameMode;
 
+extern bool positionMode;
 extern Thread wifiThreadHandle;
 extern Thread bleThreadHandle;

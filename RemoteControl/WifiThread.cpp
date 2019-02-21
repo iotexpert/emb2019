@@ -12,6 +12,7 @@
 //#define dbg_printf(...)
 #define dbg_printf printf
 
+#define SLIDER_POS_TOPIC                    "LEDtopic"
 #define SUBSCRIBE_TOPIC                     "$aws/things/Electronica2018/shadow/update"
 #define PUMP_KICK_TOPIC                                             "PumpAWS"
 
@@ -59,7 +60,7 @@ static void messageArrived( aws_iot_message_t& md)
 
 	waterLeft = (uint8_t) cJSON_GetObjectItem(reported,"WaterLevelLeftAWS")->valuedouble;
 	waterRight = (uint8_t) cJSON_GetObjectItem(reported,"WaterLevelRightAWS")->valuedouble;
-	cJSON_Delete(root);       /* Free up memory */
+	cJSON_Delete(root);             /* Free up memory */
 	dbg_printf( "WiFiThread: Water Left: %d\t Water Right: %d\n", waterLeft, waterRight );
 
 	DisplayMessage_t *msg;
@@ -76,7 +77,6 @@ static void messageArrived( aws_iot_message_t& md)
 
 void wifiThread()
 {
-
 
 	dbg_printf("WiFiThread:Started WiFI Thread\n");
 	DisplayMessage_t *msg;
@@ -190,28 +190,52 @@ void wifiThread()
 
 	while(1)
 	{
+		char buff[20];
+
 		int32_t *swipeMsg;
 		osEvent evt = swipeQueue.get(AWS_IOT_TIMEOUT);
 		if (evt.status == osEventMessage) {
-			char buff[20];
-			swipeMsg = (int32_t *)evt.value.p;
-			dbg_printf("WiFiThread:Received swipe=%d\n",(int)*swipeMsg);
-			if(*swipeMsg < 0)
-				sprintf(buff,"{\"left\":%d}",(int)(*swipeMsg * -1));
-			else
-				sprintf(buff,"{\"right\":%d}",(int)(*swipeMsg));
 
-			swipePool.free(swipeMsg);
-
-			int pub_retries = 0;
-			do
+			if(positionMode)
 			{
-				dbg_printf("WiFiThread:Trying to publish = %s\n",buff);
-				result = client.publish(ep, PUMP_KICK_TOPIC, buff, strlen(buff), publish_params);
-				dbg_printf("WiFiThread: result= %d retry=%d\n",result,pub_retries);
-				pub_retries++;
-			} while ( ( result != AWS_SUCCESS )  && ( pub_retries < APP_PUBLISH_RETRY_COUNT ) );
+				swipeMsg = (int32_t *)evt.value.p;
+				dbg_printf("Position = %d\n",*swipeMsg);
+				sprintf(buff,"{\"left\":%d}",(int)(*swipeMsg));
+				int pub_retries = 0;
+				do
+				{
+					dbg_printf("WiFiThread:Trying to publish = %s\n",buff);
+					result = client.publish(ep, SLIDER_POS_TOPIC, buff, strlen(buff), publish_params);
+					dbg_printf("WiFiThread: result= %d retry=%d\n",result,pub_retries);
+					pub_retries++;
+				} while ( ( result != AWS_SUCCESS )  && ( pub_retries < 1 ) );
+				swipePool.free(swipeMsg);
+
+			}
+			else
+			{
+				swipeMsg = (int32_t *)evt.value.p;
+				dbg_printf("WiFiThread:Received swipe=%d\n",(int)*swipeMsg);
+				if(*swipeMsg < 0)
+					sprintf(buff,"{\"left\":%d}",(int)(*swipeMsg * -1));
+				else
+					sprintf(buff,"{\"right\":%d}",(int)(*swipeMsg));
+
+				swipePool.free(swipeMsg);
+
+				int pub_retries = 0;
+				do
+				{
+					dbg_printf("WiFiThread:Trying to publish = %s\n",buff);
+					result = client.publish(ep, PUMP_KICK_TOPIC, buff, strlen(buff), publish_params);
+					dbg_printf("WiFiThread: result= %d retry=%d\n",result,pub_retries);
+					pub_retries++;
+				} while ( ( result != AWS_SUCCESS )  && ( pub_retries < APP_PUBLISH_RETRY_COUNT ) );
+			}
 		}
+
+		// backup plan
+
 		client.yield(AWS_IOT_TIMEOUT);
 	}
 }
