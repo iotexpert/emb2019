@@ -60,7 +60,7 @@ static void messageArrived( aws_iot_message_t& md)
 
 	waterLeft = (uint8_t) cJSON_GetObjectItem(reported,"WaterLevelLeftAWS")->valuedouble;
 	waterRight = (uint8_t) cJSON_GetObjectItem(reported,"WaterLevelRightAWS")->valuedouble;
-	cJSON_Delete(root);             /* Free up memory */
+	cJSON_Delete(root);                   /* Free up memory */
 	dbg_printf( "WiFiThread: Water Left: %d\t Water Right: %d\n", waterLeft, waterRight );
 
 	DisplayMessage_t *msg;
@@ -170,14 +170,17 @@ void wifiThread()
 	displayQueue.put(msg);
 	dbg_printf("WiFiThread:SUBSCRIBE to %s\n",SUBSCRIBE_TOPIC);
 
-	result = client.subscribe (ep, SUBSCRIBE_TOPIC, AWS_QOS_ATMOST_ONCE, messageArrived);
-	if(result == AWS_SUCCESS)
+	if(positionMode == false)
 	{
-		dbg_printf ("WiFiThread:Subscribed to topic successfully \n");
-	}
-	else
-	{
-		dbg_printf ("WiFiThread:Subscription to MQTT topic failed \n");
+		result = client.subscribe (ep, SUBSCRIBE_TOPIC, AWS_QOS_ATMOST_ONCE, messageArrived);
+		if(result == AWS_SUCCESS)
+		{
+			dbg_printf ("WiFiThread:Subscribed to topic successfully \n");
+		}
+		else
+		{
+			dbg_printf ("WiFiThread:Subscription to MQTT topic failed \n");
+		}
 	}
 
 
