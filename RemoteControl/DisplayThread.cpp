@@ -53,7 +53,7 @@ void drawSplash( void )
 	display.printAt(5,0,Adafruit_GFX::ALIGN_CENTER,2,(char *)"Cypress");
 	display.printAt(5,1,Adafruit_GFX::ALIGN_CENTER,2,(char *)"Choose:");
 	display.printAt(5,2,Adafruit_GFX::ALIGN_CENTER,2,(char *)"Bluetooth");
-	display.printAt(5,3,Adafruit_GFX::ALIGN_CENTER,2,(char *)"or WiFi");
+	display.printAt(5,3,Adafruit_GFX::ALIGN_CENTER,2,(char *)"and WiFi");
 	display.display();
 
 }
