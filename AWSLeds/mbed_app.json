@@ -1,0 +1,17 @@
+{
+    "config": {
+        "wifi-ssid": {
+            "help": "WiFi SSID",
+            "value": "\"CYFI_IOT_EXT\""
+        },
+        "wifi-password": {
+            "help": "WiFi Password",
+            "value": "\"cypresswicedwifi101\""
+        }
+    },
+    "target_overrides": {
+        "*": {
+            "platform.stdio-baud-rate": 115200
+        }
+    }
+}
