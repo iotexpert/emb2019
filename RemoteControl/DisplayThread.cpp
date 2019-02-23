@@ -43,10 +43,10 @@ void drawSplash( void )
 {
 	display.drawX11BitMap(cypressLogo,cypressLogoWidth,sizeof(cypressLogo),0,(64-cypressLogoHeight)/2);
 	display.display();
-	wait(2.0);       // Cypress Logo 2 Seconds
+	wait(2.0);             // Cypress Logo 2 Seconds
 	display.drawX11BitMap(mouserLogo,mouserLogoWidth,sizeof(mouserLogo),0,(64-mouserLogoHeight)/2);
 	display.display();
-	wait(2.0);       // Mouser Logo 2 Seconds
+	wait(2.0);             // Mouser Logo 2 Seconds
 
 
 	display.clearDisplay();
@@ -68,7 +68,7 @@ void drawBle( DisplayType_t type )
 	case BLE_START:
 		queue->cancel(wifiTimerId);
 		dbg_printf("DisplayThread: WiFi Timer ID Cancel\n");
-		wifiLED = LED_OFF;             // turn it off
+		wifiLED = LED_OFF;                         // turn it off
 
 		display.clearDisplay();
 		display.printAt(10,0,Adafruit_GFX::ALIGN_CENTER,1,"Start BLE");
@@ -82,7 +82,7 @@ void drawBle( DisplayType_t type )
 		break;
 	case BLE_SERVICE_DISC:
 		display.printAt(10,4,Adafruit_GFX::ALIGN_CENTER,1,"Service Disc Done");
-	break;
+		break;
 	case REGISTER_NOTIFY:
 		display.printAt(10,5,Adafruit_GFX::ALIGN_CENTER,1,"Notify on");
 		break;
@@ -103,7 +103,7 @@ void drawWiFi(  DisplayType_t type )
 	{
 	case WIFI_CONNECT:
 		queue->cancel(bleTimerId);
-		bleLED = LED_OFF;             // off
+		bleLED = LED_OFF;                         // off
 
 		display.clearDisplay();
 		display.printAt(10,1,Adafruit_GFX::ALIGN_CENTER,1,"Connecting WiFi");
@@ -364,4 +364,23 @@ void displayThread()
 			}
 		}
 	}
+}
+
+DisplayMessage_t *sendDisplayMessage(  DisplayCommand_t command,
+													DisplayType_t type,
+													int32_t val1,
+													int32_t val2)
+{
+	DisplayMessage_t *msg;
+	msg = displayPool.alloc();
+	if(msg)
+	{
+		msg->command = command;
+		msg->type = type;
+		msg->val1 = val1;
+		msg->val2 = val2;
+
+		displayQueue.put(msg);
+	}
+	return msg;
 }

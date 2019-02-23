@@ -21,7 +21,8 @@ typedef enum {
 	SUBSCRIBE_SHADOW,
 	INIT_WIFI,
 	INIT_BLE,
-	WATER_VALUE
+	WATER_VALUE,
+	SWIPE
 } DisplayType_t;
 
 
@@ -36,3 +37,5 @@ extern void displayThread();
 
 extern Queue<DisplayMessage_t, 10> displayQueue;
 extern MemoryPool<DisplayMessage_t, 10> displayPool;
+
+DisplayMessage_t *sendDisplayMessage(  DisplayCommand_t command,DisplayType_t type,int32_t val1=0,int32_t val2=0);

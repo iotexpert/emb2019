@@ -11,7 +11,6 @@ typedef enum {
 #define LED_OFF 1
 
 extern volatile GameMode_t gameMode;
-
 extern bool positionMode;
 extern Thread wifiThreadHandle;
 extern Thread bleThreadHandle;

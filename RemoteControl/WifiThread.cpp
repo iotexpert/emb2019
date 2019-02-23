@@ -63,14 +63,7 @@ static void messageArrived( aws_iot_message_t& md)
 	cJSON_Delete(root);                   /* Free up memory */
 	dbg_printf( "WiFiThread: Water Left: %d\t Water Right: %d\n", waterLeft, waterRight );
 
-	DisplayMessage_t *msg;
-	msg = displayPool.alloc();
-	msg->command = GAME_SCREEN;
-	msg->type = WATER_VALUE;
-	msg->val1 = waterLeft;
-	msg->val2 = waterRight;
-	displayQueue.put(msg);
-
+	sendDisplayMessage(GAME_SCREEN,WATER_VALUE,waterLeft,waterRight);
 
 }
 
@@ -79,7 +72,6 @@ void wifiThread()
 {
 
 	dbg_printf("WiFiThread:Started WiFI Thread\n");
-	DisplayMessage_t *msg;
 
 	wifi = WiFiInterface::get_default_instance();
 	if (!wifi) {
@@ -87,11 +79,7 @@ void wifiThread()
 		while(1);
 	}
 
-
-	msg = displayPool.alloc();
-	msg->command = WIFI_SCREEN;
-	msg->type = WIFI_CONNECT;
-	displayQueue.put(msg);
+	sendDisplayMessage(WIFI_SCREEN,WIFI_CONNECT);
 
 	int ret;
 
@@ -123,11 +111,7 @@ void wifiThread()
 	dbg_printf("WiFiThread:Gateway: %s\n", wifi->get_gateway());
 	dbg_printf("WiFiThread:RSSI: %d\n", wifi->get_rssi());
 
-	msg = displayPool.alloc();
-	msg->command = WIFI_SCREEN;
-	msg->type = AWS_RESOURCES;
-	displayQueue.put(msg);
-	dbg_printf("WiFiThread:AWS_RESOURCES\n");
+	sendDisplayMessage(WIFI_SCREEN,AWS_RESOURCES);
 
 	aws_connect_params conn_params = { 0,0,NULL,NULL,NULL,NULL,NULL };
 	aws_publish_params publish_params = { AWS_QOS_ATMOST_ONCE };
@@ -140,10 +124,7 @@ void wifiThread()
 	conn_params.peer_cn = NULL;
 	conn_params.client_id = (uint8_t*)myName;
 
-	msg = displayPool.alloc();
-	msg->command = WIFI_SCREEN;
-	msg->type = AWS_CONNECT;
-	displayQueue.put(msg);
+	sendDisplayMessage(WIFI_SCREEN,AWS_CONNECT);
 
 	dbg_printf("WiFiThread:AWS_CONNECT\n");
 	SocketAddress mySocket;
@@ -164,10 +145,7 @@ void wifiThread()
 		dbg_printf("WiFiThread:Connected to AWS endpoint\n");
 	}
 
-	msg = displayPool.alloc();
-	msg->command = WIFI_SCREEN;
-	msg->type = SUBSCRIBE_SHADOW;
-	displayQueue.put(msg);
+	sendDisplayMessage(WIFI_SCREEN,SUBSCRIBE_SHADOW);
 	dbg_printf("WiFiThread:SUBSCRIBE to %s\n",SUBSCRIBE_TOPIC);
 
 	if(positionMode == false)
@@ -183,12 +161,7 @@ void wifiThread()
 		}
 	}
 
-
-	msg = displayPool.alloc();
-	msg->command = GAME_SCREEN;
-	msg->type = INIT_WIFI;
-	displayQueue.put(msg);
-
+	sendDisplayMessage(GAME_SCREEN,INIT_WIFI);
 	gameMode = MODE_GAME;
 
 	while(1)

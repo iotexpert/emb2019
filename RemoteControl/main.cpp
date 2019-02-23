@@ -2,7 +2,6 @@
 #include "global.h"
 #include "DisplayThread.h"
 #include "CapSenseThread.h"
-#include "BleThread.h"
 
 Thread displayThreadHandle(osPriorityNormal, OS_STACK_SIZE, NULL, "DisplayThread");
 Thread capSenseThreadHandle(osPriorityNormal, OS_STACK_SIZE, NULL, "CapSense Thread");

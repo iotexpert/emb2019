@@ -3,7 +3,7 @@
 #include "CapSenseThread.h"
 #include "DisplayThread.h"
 #include "global.h"
-#include "BleThread.h"
+#include "BLERemote.h"
 #include "WifiThread.h"
 
 #define dbg_printf(...)
@@ -113,29 +113,21 @@ void capSenseThread(void)
 				sldLED = LED_OFF;
 				if(startPos != 0xFFFF)
 				{
-					DisplayMessage_t *msg;
 					dbg_printf("CapSenseThread: Swipe s:%u e%u Val=%d\n",startPos,endPos,(endPos - startPos));
 					// Test code
 						#if 0
 					msg = displayPool.alloc();
 					if(msg)
 					{
-						msg->command = GAME_SCREEN;
-						msg->type = INIT_BLE;
-						displayQueue.put(msg);
+						sendDisplayMessage(GAME_SCREEN,INIT_BLE);
+
 					}
 						#endif
 
 					if(gameMode == MODE_GAME)
 					{
 						// Send the swipe value to the display
-						msg = displayPool.alloc();
-						if(msg)
-						{
-							msg->command = SWIPE_VALUE;
-							msg->val1 = endPos - startPos;
-							displayQueue.put(msg);
-						}
+						sendDisplayMessage(SWIPE_VALUE,SWIPE,endPos - startPos);
 						// Send the swipe value to either BLE or  WiFi to be processes
 						int32_t *swipeMsg;
 						swipeMsg = swipePool.alloc();
