@@ -45,7 +45,7 @@
         "DEVICE_TRNG=1", 
         "DEVICE_USTICKER=1", 
         "FEATURE_BLE=1", 
-        "MBED_BUILD_TIMESTAMP=1550923645.82", 
+        "MBED_BUILD_TIMESTAMP=1550928393.19", 
         "MBED_MPU_CUSTOM", 
         "MCU_PSOC6_M4", 
         "PSOC6_DYNSRM_DISABLE=1", 
