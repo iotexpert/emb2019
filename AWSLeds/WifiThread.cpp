@@ -34,11 +34,9 @@ static void messageArrived( aws_iot_message_t& md)
   cJSON *right;
 
   char *payload = (char *)message.payload;
-
   for(unsigned int i=0; i<message.payloadlen; i++)
-    {
       buff[i] = payload[i];
-    }
+
   buff[message.payloadlen] = 0;
 
   dbg_printf("WiFiThread:%s=%s\n",SUBSCRIBE_TOPIC,buff);
@@ -96,7 +94,6 @@ void wifiThread()
   dbg_printf("WiFiThread:Netmask: %s\n", wifi->get_netmask());
   dbg_printf("WiFiThread:Gateway: %s\n", wifi->get_gateway());
   dbg_printf("WiFiThread:RSSI: %d\n", wifi->get_rssi());
-  dbg_printf("WiFiThread:AWS_RESOURCES\n");
 
   aws_connect_params conn_params = { 0,0,NULL,NULL,NULL,NULL,NULL };
 
@@ -106,8 +103,9 @@ void wifiThread()
 
   dbg_printf("WiFiThread:AWS_CONNECT\n");
   SocketAddress mySocket;
-  dbg_printf("WiFiThread:Attempting to connect to endpoint:%s\n",AWS_IOT_ENDPOINT_ADDRESS);
+
   wifi->gethostbyname(AWS_IOT_ENDPOINT_ADDRESS, &mySocket, NSAPI_IPv4);
+
   dbg_printf("WiFiThread:Host URL:%s IP=%s\n", AWS_IOT_ENDPOINT_ADDRESS, mySocket.get_ip_address());
 
   AWSIoTClient client(wifi, myName, SSL_CLIENTKEY_PEM, strlen(SSL_CLIENTKEY_PEM), SSL_CLIENTCERT_PEM, strlen(SSL_CLIENTCERT_PEM));
