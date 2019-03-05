@@ -1,3 +1,4 @@
+#include "BLERemote.h"
 #pragma once
 typedef enum {
   MODE_SPLASH,
@@ -14,3 +15,4 @@ extern volatile GameMode_t gameMode;
 extern bool positionMode;
 extern Thread wifiThreadHandle;
 extern Thread bleThreadHandle;
+extern BLERemote bleremote;

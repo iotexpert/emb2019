@@ -48,7 +48,7 @@ void capSenseThread(void)
 	int startPos = 0xFFFF;
 	int endPos;
 
-  int count=0;
+	int count=0;
 
 	for (;;)
 	{
@@ -69,7 +69,7 @@ void capSenseThread(void)
 			if(gameMode == MODE_CONNECT)
 			{
 				gameMode = MODE_CONNECT_BLE;
-				bleThreadHandle.start(bleThread);
+				bleThreadHandle.start(callback(&bleremote,&BLERemote::start));
 			}
 		}
 
@@ -94,19 +94,19 @@ void capSenseThread(void)
 				dbg_printf("CapSenseThread:Set Start =%u\n",startPos);
 			}
 
-      count = (count + 1) % 300;
-			if(positionMode && 	gameMode == MODE_GAME && count == 0)
+			count = (count + 1) % 300;
+			if(positionMode &&      gameMode == MODE_GAME && count == 0)
 			{
-        int32_t *swipeMsg;
-        swipeMsg = swipePool.alloc();
-        if(swipeMsg)
-        {
-          *swipeMsg = endPos;
-          swipeQueue.put(swipeMsg);
-        }
+				int32_t *swipeMsg;
+				swipeMsg = swipePool.alloc();
+				if(swipeMsg)
+				{
+					*swipeMsg = endPos;
+					swipeQueue.put(swipeMsg);
+				}
 			}
 		}
-		else     // No touch
+		else                 // No touch
 		{
 			if(positionMode == false)
 			{
@@ -115,14 +115,14 @@ void capSenseThread(void)
 				{
 					dbg_printf("CapSenseThread: Swipe s:%u e%u Val=%d\n",startPos,endPos,(endPos - startPos));
 					// Test code
-						#if 0
+																								#if 0
 					msg = displayPool.alloc();
 					if(msg)
 					{
 						sendDisplayMessage(GAME_SCREEN,INIT_BLE);
 
 					}
-						#endif
+																								#endif
 
 					if(gameMode == MODE_GAME)
 					{

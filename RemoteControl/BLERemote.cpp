@@ -16,7 +16,7 @@
 //#define dbg_printf(...)
 #define dbg_printf printf
 
-EventQueue event_queue(/* event count */ 10 * EVENTS_EVENT_SIZE);
+//EventQueue event_queue(/* event count */ 10 * EVENTS_EVENT_SIZE);
 
 const UUID BLERemote::GAME_SERVICE_UUID("5b19bae4-e452-a996-f14a-84c8094dc021");
 const UUID BLERemote::WATER_LEFT_CHARACTERISTIC_UUID("6397ca92-5f02-1eb9-3d4a-316b4300501e");
@@ -28,6 +28,8 @@ const char BLERemote::DEVICE_NAME[] = "Remote";
 
 void BLERemote::start() {
 	dbg_printf("blethread: Started BLE\n");
+	sendDisplayMessage(BLE_SCREEN,BLE_START);
+	_ble.onEventsToProcess(as_cb(&Self::schedule_ble_events));
 	_ble.gap().setEventHandler(this);
 	_ble.init(this, &BLERemote::on_init_complete);
 	_event_queue.call_every(20, this,&BLERemote::processSwipeQueue);
@@ -67,7 +69,6 @@ void BLERemote::onConnectionComplete(const ble::ConnectionCompleteEvent &event)
 {
 	dbg_printf("blethread: onConnectionComplete\n");
 	sendDisplayMessage(BLE_SCREEN,BLE_CONNECT);
-	connectedStatus = true;
 	_connection_handle = event.getConnectionHandle();
 
 	dbg_printf("blethread: onConnectionComplete\n");
@@ -84,25 +85,25 @@ void BLERemote::characteristic_discovery(const DiscoveredCharacteristic *charact
 	if(characteristicP->getUUID() == WATER_LEFT_CHARACTERISTIC_UUID)
 	{
 		dbg_printf("bleThread: Found water left %d\n",characteristicP->getValueHandle());
-		waterLevelLeft = *characteristicP;
+		_waterLevelLeft = *characteristicP;
 	}
 
 	if(characteristicP->getUUID() == WATER_RIGHT_CHARACTERISTIC_UUID)
 	{
 		dbg_printf("bleThread:Found water right %d\n",characteristicP->getValueHandle());
-		waterLevelRight = *characteristicP;
+		_waterLevelRight = *characteristicP;
 	}
 
 	if(characteristicP->getUUID() == PUMP_LEFT_CHARACTERISTIC_UUID)
 	{
 		dbg_printf("bleThread:Found pump left %d\n",characteristicP->getValueHandle());
-		pumpLeft = *characteristicP;
+		_pumpLeft = *characteristicP;
 	}
 
 	if(characteristicP->getUUID() == PUMP_RIGHT_CHARACTERISTIC_UUID)
 	{
 		dbg_printf("bleThread:Found pump right %d\n",characteristicP->getValueHandle());
-		pumpRight = *characteristicP;
+		_pumpRight = *characteristicP;
 	}
 }
 
@@ -110,7 +111,7 @@ void BLERemote::characteristic_discovery(const DiscoveredCharacteristic *charact
 void BLERemote::discovery_termination(Gap::Handle_t connectionHandle) {
 	dbg_printf("terminated SD for handle %u\r\n", connectionHandle);
 
-	ble_error_t error = waterLevelLeft.discoverDescriptors(
+	ble_error_t error = _waterLevelLeft.discoverDescriptors(
 		as_cb(&Self::when_descriptor_discovered),
 		as_cb(&Self::when_descriptor_discovery_ends));
 	(void)error;
@@ -118,32 +119,32 @@ void BLERemote::discovery_termination(Gap::Handle_t connectionHandle) {
 
 void BLERemote::when_descriptor_discovered(const CharacteristicDescriptorDiscovery::DiscoveryCallbackParams_t* event)
 {
-	if(event->characteristic.getDeclHandle() == waterLevelLeft.getDeclHandle() && event->descriptor.getUUID().getShortUUID() == BLE_UUID_DESCRIPTOR_CLIENT_CHAR_CONFIG)
+	if(event->characteristic.getDeclHandle() == _waterLevelLeft.getDeclHandle() && event->descriptor.getUUID().getShortUUID() == BLE_UUID_DESCRIPTOR_CLIENT_CHAR_CONFIG)
 	{
-		waterLeftCCCD = event->descriptor.getAttributeHandle();
-		dbg_printf("Found waterleft CCCD %d\n",waterLeftCCCD);
+		_waterLeftCCCD = event->descriptor.getAttributeHandle();
+		dbg_printf("Found waterleft CCCD %d\n",_waterLeftCCCD);
 	}
 
-	if(event->characteristic.getDeclHandle() == waterLevelRight.getDeclHandle() && event->descriptor.getUUID().getShortUUID() == BLE_UUID_DESCRIPTOR_CLIENT_CHAR_CONFIG)
+	if(event->characteristic.getDeclHandle() == _waterLevelRight.getDeclHandle() && event->descriptor.getUUID().getShortUUID() == BLE_UUID_DESCRIPTOR_CLIENT_CHAR_CONFIG)
 	{
-		waterRightCCCD = event->descriptor.getAttributeHandle();
-		dbg_printf("Found waterright CCCD %d\n",waterRightCCCD);
+		_waterRightCCCD = event->descriptor.getAttributeHandle();
+		dbg_printf("Found waterright CCCD %d\n",_waterRightCCCD);
 
 	}
 }
 
 void BLERemote::when_descriptor_discovery_ends(const CharacteristicDescriptorDiscovery::TerminationCallbackParams_t *event) {
 
-	if(event->characteristic == waterLevelLeft)
+	if(event->characteristic == _waterLevelLeft)
 	{
 		dbg_printf("blethread: found water level left cccd\n");
-		ble_error_t error = waterLevelRight.discoverDescriptors(
+		ble_error_t error = _waterLevelRight.discoverDescriptors(
 			as_cb(&Self::when_descriptor_discovered),
 			as_cb(&Self::when_descriptor_discovery_ends));
 		(void)error;
 	}
 
-	if(event->characteristic == waterLevelRight)
+	if(event->characteristic == _waterLevelRight)
 	{
 		dbg_printf("blethread: found water level right cccd\n");
 		sendDisplayMessage(GAME_SCREEN,INIT_BLE);
@@ -151,11 +152,11 @@ void BLERemote::when_descriptor_discovery_ends(const CharacteristicDescriptorDis
 
 		_ble.gattClient().onDataWritten().add(as_cb(&Self::when_waterright_cccd_written));
 		uint16_t cccd_value = 0x01;
-		dbg_printf("blethread: writing right CCCD %d\n",waterRightCCCD);
+		dbg_printf("blethread: writing right CCCD %d\n",_waterRightCCCD);
 		_ble.gattClient().write(
 			GattClient::GATT_OP_WRITE_REQ,
 			_connection_handle,
-			waterRightCCCD,
+			_waterRightCCCD,
 			sizeof(cccd_value),
 			reinterpret_cast<uint8_t*>(&cccd_value)
 			);
@@ -175,7 +176,7 @@ void BLERemote::when_waterright_cccd_written(const GattWriteCallbackParams* even
 	_ble.gattClient().write(
 		GattClient::GATT_OP_WRITE_REQ,
 		_connection_handle,
-		waterLeftCCCD,
+		_waterLeftCCCD,
 		sizeof(cccd_value),
 		reinterpret_cast<uint8_t*>(&cccd_value));
 }
@@ -205,14 +206,14 @@ void BLERemote::processSwipeQueue()
 			{
 				dbg_printf("left\n");
 				val = (uint8_t)(*swipeMsg * -1);
-				ble_error_t bterr = pumpLeft.write(1,&val);
+				ble_error_t bterr = _pumpLeft.write(1,&val);
 				dbg_printf("BTErr = %d\n", bterr);
 			}
 			else
 			{
 				dbg_printf("right\n");
 				val = (uint8_t)*swipeMsg;
-				ble_error_t bterr = pumpRight.write(1,&val);
+				ble_error_t bterr = _pumpRight.write(1,&val);
 				dbg_printf("BTErr = %d\n", bterr);
 			}
 
@@ -224,13 +225,13 @@ void BLERemote::processSwipeQueue()
 
 void BLERemote::when_characteristic_read(const GattReadCallbackParams *read_event)
 {
-	if(read_event->handle == waterLevelLeft.getValueHandle() )
+	if(read_event->handle == _waterLevelLeft.getValueHandle() )
 	{
-		waterLeft = read_event->data[0];
+		_waterLeft = read_event->data[0];
 	}
-	else if(read_event->handle == waterLevelRight.getValueHandle() )
+	else if(read_event->handle == _waterLevelRight.getValueHandle() )
 	{
-		waterRight = read_event->data[0];
+		_waterRight = read_event->data[0];
 	}
 	else
 	{
@@ -241,19 +242,19 @@ void BLERemote::when_characteristic_read(const GattReadCallbackParams *read_even
 		printf(".\r\n");
 	}
 
-	sendDisplayMessage(GAME_SCREEN,WATER_VALUE,waterLeft,waterRight);
+	sendDisplayMessage(GAME_SCREEN,WATER_VALUE,_waterLeft,_waterRight);
 
 }
 
 void BLERemote::when_characteristic_changed(const GattHVXCallbackParams* event)
 {
-	if(event->handle == waterLevelLeft.getValueHandle() )
+	if(event->handle == _waterLevelLeft.getValueHandle() )
 	{
-		waterLeft = event->data[0];
+		_waterLeft = event->data[0];
 	}
-	else if(event->handle == waterLevelRight.getValueHandle() )
+	else if(event->handle == _waterLevelRight.getValueHandle() )
 	{
-		waterRight = event->data[0];
+		_waterRight = event->data[0];
 	}
 	else
 	{
@@ -264,7 +265,7 @@ void BLERemote::when_characteristic_changed(const GattHVXCallbackParams* event)
 		printf(".\r\n");
 	}
 
-	sendDisplayMessage(GAME_SCREEN,WATER_VALUE,waterLeft,waterRight);
+	sendDisplayMessage(GAME_SCREEN,WATER_VALUE,_waterLeft,_waterRight);
 
 }
 
@@ -272,7 +273,6 @@ void BLERemote::onDisconnectionComplete(const ble::DisconnectionCompleteEvent&) 
 	_ble.gap().startAdvertising(ble::LEGACY_ADVERTISING_HANDLE);
 	dbg_printf("bleThread: DisconnectionCompleteEvent\n");
 
-	connectedStatus = false;
 	gameMode = MODE_CONNECT_BLE;
 	sendDisplayMessage(BLE_SCREEN,BLE_START);
 	start_advertising();
@@ -281,21 +281,6 @@ void BLERemote::onDisconnectionComplete(const ble::DisconnectionCompleteEvent&) 
 
 
 /** Schedule processing of events from the BLE middleware in the event queue. */
-void schedule_ble_events(BLE::OnEventsToProcessCallbackContext *context) {
-	event_queue.call(Callback<void()>(&context->ble, &BLE::processEvents));
-}
-
-
-void bleThread()
-{
-	dbg_printf("bleThread: Starting BLE Thread\n");
-
-	sendDisplayMessage(BLE_SCREEN,BLE_START);
-
-	BLE &ble = BLE::Instance();
-	ble.onEventsToProcess(schedule_ble_events);
-
-	BLERemote remote(ble, event_queue);
-	remote.start();
-
+void BLERemote::schedule_ble_events(BLE::OnEventsToProcessCallbackContext *context) {
+	_event_queue.call(Callback<void()>(&context->ble, &BLE::processEvents));
 }

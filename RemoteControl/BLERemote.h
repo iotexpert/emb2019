@@ -1,7 +1,6 @@
 #pragma once
 
 #include "mbed.h"
-
 #include "ble/BLE.h"
 #include "ble/gap/Gap.h"
 #include "ble/GattClient.h"
@@ -9,34 +8,56 @@
 #include "ble/DiscoveredCharacteristic.h"
 #include "ble/CharacteristicDescriptorDiscovery.h"
 
-
-extern void bleThread();
-
 class BLERemote :   private mbed::NonCopyable<BLERemote>,
 	public ble::Gap::EventHandler {
 
-typedef BLERemote Self;
+	private:
+	BLE &_ble;
+	Gap::Handle_t _connection_handle;
+	events::EventQueue _event_queue;
 
+	DiscoveredCharacteristic _waterLevelLeft;
+	DiscoveredCharacteristic _waterLevelRight;
+	DiscoveredCharacteristic _pumpRight;
+	DiscoveredCharacteristic _pumpLeft;
+	GattAttribute::Handle_t _waterLeftCCCD;
+	GattAttribute::Handle_t _waterRightCCCD;
+
+	uint8_t _waterLeft;
+	uint8_t _waterRight;
+	uint8_t _adv_buffer[ble::LEGACY_ADVERTISING_MAX_SIZE];
+	ble::AdvertisingDataBuilder _adv_data_builder;
+
+	static const UUID GAME_SERVICE_UUID;
+	static const UUID WATER_LEFT_CHARACTERISTIC_UUID;
+	static const UUID WATER_RIGHT_CHARACTERISTIC_UUID;
+	static const UUID PUMP_LEFT_CHARACTERISTIC_UUID;
+	static const UUID PUMP_RIGHT_CHARACTERISTIC_UUID;
+	static const char DEVICE_NAME[];
+	
 public:
-BLERemote(BLE &ble, events::EventQueue &event_queue) :
+BLERemote(BLE &ble) :
 	_ble(ble),
 	_connection_handle(),
-	_event_queue(event_queue),
-	connectedStatus(false),
-	waterLeft(0),
-	waterRight(0),
+	_event_queue(10 * EVENTS_EVENT_SIZE),
+	_waterLeft(0),
+	_waterRight(0),
 	_adv_data_builder(_adv_buffer) {
 }
+
 void start();
 
 private:
 
+typedef BLERemote Self;
 template<typename ContextType>
 FunctionPointerWithContext<ContextType> as_cb(
 	void (Self::*member)(ContextType context)
 	) {
 	return makeFunctionPointer(this, member);
 }
+
+void schedule_ble_events(BLE::OnEventsToProcessCallbackContext *context);
 
 void on_init_complete(BLE::InitializationCompleteCallbackContext *params);
 void start_advertising();
@@ -56,29 +77,6 @@ void when_characteristic_changed(const GattHVXCallbackParams* event);
 
 void onDisconnectionComplete(const ble::DisconnectionCompleteEvent&);
 
-private:
-BLE &_ble;
-Gap::Handle_t _connection_handle;
-events::EventQueue &_event_queue;
-bool connectedStatus;
 
-DiscoveredCharacteristic waterLevelLeft;
-DiscoveredCharacteristic waterLevelRight;
-DiscoveredCharacteristic pumpRight;
-DiscoveredCharacteristic pumpLeft;
-GattAttribute::Handle_t waterLeftCCCD;
-GattAttribute::Handle_t waterRightCCCD;
-
-uint8_t waterLeft;
-uint8_t waterRight;
-uint8_t _adv_buffer[ble::LEGACY_ADVERTISING_MAX_SIZE];
-ble::AdvertisingDataBuilder _adv_data_builder;
-
-static const UUID GAME_SERVICE_UUID;
-static const UUID WATER_LEFT_CHARACTERISTIC_UUID;
-static const UUID WATER_RIGHT_CHARACTERISTIC_UUID;
-static const UUID PUMP_LEFT_CHARACTERISTIC_UUID;
-static const UUID PUMP_RIGHT_CHARACTERISTIC_UUID;
-static const char DEVICE_NAME[];
 
 };
